@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include <util.h>
+#include <log.h>
 #include "mips_instruction_decode.h"
 
 // Exceptions
@@ -24,40 +25,39 @@
 
 #define CPU_REG_LR 31
 
-#define CP0_REG_INDEX    0
-#define CP0_REG_RANDOM   1
-#define CP0_REG_ENTRYLO0 2
-#define CP0_REG_ENTRYLO1 3
-#define CP0_REG_CONTEXT  4
-#define CP0_REG_PAGEMASK 5
-#define CP0_REG_WIRED    6
-#define CP0_REG_7        7
+#define CP0_REG_0        0
+#define CP0_REG_1        1
+#define CP0_REG_2        2
+#define CP0_REG_BPC      3
+#define CP0_REG_4        4
+#define CP0_REG_BDA      5
+#define CP0_REG_JUMPDEST 6
+#define CP0_REG_DCIC     7
 #define CP0_REG_BADVADDR 8
-#define CP0_REG_COUNT    9
-#define CP0_REG_ENTRYHI  10
-#define CP0_REG_COMPARE  11
-#define CP0_REG_STATUS   12
+#define CP0_REG_BDAM     9
+#define CP0_REG_10       10
+#define CP0_REG_BPCM     11
+#define CP0_REG_SR       12
 #define CP0_REG_CAUSE    13
 #define CP0_REG_EPC      14
 #define CP0_REG_PRID     15
-#define CP0_REG_CONFIG   16
-#define CP0_REG_LLADDR   17
-#define CP0_REG_WATCHLO  18
-#define CP0_REG_WATCHHI  19
-#define CP0_REG_XCONTEXT 20
+#define CP0_REG_16       16
+#define CP0_REG_17       17
+#define CP0_REG_18       18
+#define CP0_REG_19       19
+#define CP0_REG_20       20
 #define CP0_REG_21       21
 #define CP0_REG_22       22
 #define CP0_REG_23       23
 #define CP0_REG_24       24
 #define CP0_REG_25       25
-#define CP0_REG_PARITYER 26
-#define CP0_REG_CACHEER  27
-#define CP0_REG_TAGLO    28
-#define CP0_REG_TAGHI    29
-#define CP0_REG_ERR_EPC  30
+#define CP0_REG_26       26
+#define CP0_REG_27       27
+#define CP0_REG_28       28
+#define CP0_REG_29       29
+#define CP0_REG_30       30
 #define CP0_REG_31       31
 
-#define CP0_STATUS_WRITE_MASK 0xFF57FFFF
 #define CP0_CONFIG_WRITE_MASK 0x0FFFFFFF
 
 #define CPU_MODE_KERNEL 0
@@ -71,7 +71,6 @@
 #define OPC_LUI    0b001111
 #define OPC_ADDI   0b001000
 #define OPC_ADDIU  0b001001
-#define OPC_DADDI  0b011000
 #define OPC_ANDI   0b001100
 #define OPC_LBU    0b100100
 #define OPC_LHU    0b100101
@@ -79,19 +78,14 @@
 #define OPC_LW     0b100011
 #define OPC_LWU    0b100111
 #define OPC_BEQ    0b000100
-#define OPC_BEQL   0b010100
 #define OPC_BGTZ   0b000111
-#define OPC_BGTZL  0b010111
 #define OPC_BLEZ   0b000110
-#define OPC_BLEZL  0b010110
 #define OPC_BNE    0b000101
-#define OPC_BNEL   0b010101
 #define OPC_CACHE  0b101111
 #define OPC_REGIMM 0b000001
 #define OPC_SPCL   0b000000
 #define OPC_SB     0b101000
 #define OPC_SH     0b101001
-#define OPC_SD     0b111111
 #define OPC_SW     0b101011
 #define OPC_ORI    0b001101
 #define OPC_J      0b000010
@@ -99,84 +93,20 @@
 #define OPC_SLTI   0b001010
 #define OPC_SLTIU  0b001011
 #define OPC_XORI   0b001110
-#define OPC_DADDIU 0b011001
 #define OPC_LB     0b100000
-#define OPC_LDC1   0b110101
-#define OPC_SDC1   0b111101
-#define OPC_LWC1   0b110001
-#define OPC_SWC1   0b111001
 #define OPC_LWL    0b100010
 #define OPC_LWR    0b100110
 #define OPC_SWL    0b101010
 #define OPC_SWR    0b101110
-#define OPC_LDL    0b011010
-#define OPC_LDR    0b011011
-#define OPC_SDL    0b101100
-#define OPC_SDR    0b101101
-#define OPC_LL     0b110000
-#define OPC_LLD    0b110100
-#define OPC_SC     0b111000
-#define OPC_SCD    0b111100
 
 // Coprocessor
 #define COP_MF    0b00000
-#define COP_DMF   0b00001
-#define COP_CF    0b00010
 #define COP_MT    0b00100
-#define COP_DMT   0b00101
-#define COP_CT    0b00110
-#define COP_BC    0b01000
 
-
-#define COP_BC_BCF  0b00000
-#define COP_BC_BCT  0b00001
-#define COP_BC_BCFL 0b00010
-#define COP_BC_BCTL 0b00011
 
 // Coprocessor FUNCT
-#define COP_FUNCT_ADD        0b000000
-#define COP_FUNCT_TLBR_SUB   0b000001
-#define COP_FUNCT_TLBWI_MULT 0b000010
-#define COP_FUNCT_DIV        0b000011
-#define COP_FUNCT_SQRT       0b000100
-#define COP_FUNCT_ABS        0b000101
-#define COP_FUNCT_TLBWR_MOV  0b000110
-#define COP_FUNCT_TLBP       0b001000
-#define COP_FUNCT_ROUND_L    0b001000
-#define COP_FUNCT_TRUNC_L    0b001001
-#define COP_FUNCT_ROUND_W    0b001100
-#define COP_FUNCT_TRUNC_W    0b001101
-#define COP_FUNCT_FLOOR_W    0b001111
-#define COP_FUNCT_ERET       0b011000
 #define COP_FUNCT_WAIT       0b100000
-#define COP_FUNCT_CVT_S      0b100000
-#define COP_FUNCT_CVT_D      0b100001
-#define COP_FUNCT_CVT_W      0b100100
-#define COP_FUNCT_CVT_L      0b100101
-#define COP_FUNCT_NEG        0b000111
-#define COP_FUNCT_C_F        0b110000
-#define COP_FUNCT_C_UN       0b110001
-#define COP_FUNCT_C_EQ       0b110010
-#define COP_FUNCT_C_UEQ      0b110011
-#define COP_FUNCT_C_OLT      0b110100
-#define COP_FUNCT_C_ULT      0b110101
-#define COP_FUNCT_C_OLE      0b110110
-#define COP_FUNCT_C_ULE      0b110111
-#define COP_FUNCT_C_SF       0b111000
-#define COP_FUNCT_C_NGLE     0b111001
-#define COP_FUNCT_C_SEQ      0b111010
-#define COP_FUNCT_C_NGL      0b111011
-#define COP_FUNCT_C_LT       0b111100
-#define COP_FUNCT_C_NGE      0b111101
-#define COP_FUNCT_C_LE       0b111110
-#define COP_FUNCT_C_NGT      0b111111
-
-
-// Floating point
-#define FP_FMT_SINGLE 16
-#define FP_FMT_DOUBLE 17
-#define FP_FMT_W      20
-#define FP_FMT_L      21
+#define COP_FUNCT_RFE        0b010000
 
 // Special
 #define FUNCT_SLL     0b000000
@@ -193,17 +123,10 @@
 #define FUNCT_MTHI    0b010001
 #define FUNCT_MFLO    0b010010
 #define FUNCT_MTLO    0b010011
-#define FUNCT_DSLLV   0b010100
-#define FUNCT_DSRLV   0b010110
-#define FUNCT_DSRAV   0b010111
 #define FUNCT_MULT    0b011000
 #define FUNCT_MULTU   0b011001
 #define FUNCT_DIV     0b011010
 #define FUNCT_DIVU    0b011011
-#define FUNCT_DMULT   0b011100
-#define FUNCT_DMULTU  0b011101
-#define FUNCT_DDIV    0b011110
-#define FUNCT_DDIVU   0b011111
 #define FUNCT_ADD     0b100000
 #define FUNCT_ADDU    0b100001
 #define FUNCT_AND     0b100100
@@ -214,27 +137,15 @@
 #define FUNCT_NOR     0b100111
 #define FUNCT_SLT     0b101010
 #define FUNCT_SLTU    0b101011
-#define FUNCT_DADD    0b101100
-#define FUNCT_DADDU   0b101101
-#define FUNCT_DSUB    0b101110
-#define FUNCT_DSUBU   0b101111
 #define FUNCT_TEQ     0b110100
 #define FUNCT_TNE     0b110110
-#define FUNCT_DSLL    0b111000
-#define FUNCT_DSRL    0b111010
-#define FUNCT_DSRA    0b111011
-#define FUNCT_DSLL32  0b111100
-#define FUNCT_DSRL32  0b111110
-#define FUNCT_DSRA32  0b111111
 
 #define FUNCT_BREAK 0b001101
 
 
 // REGIMM
 #define RT_BLTZ   0b00000
-#define RT_BLTZL  0b00010
 #define RT_BGEZ   0b00001
-#define RT_BGEZL  0b00011
 #define RT_BLTZAL 0b10000
 #define RT_BGEZAL 0b10001
 
@@ -242,35 +153,32 @@
 typedef union cp0_status {
     u32 raw;
     struct {
-        unsigned ie:1;
-        unsigned exl:1;
-        unsigned erl:1;
-        unsigned ksu:2;
-        unsigned ux:1;
-        unsigned sx:1;
-        unsigned kx:1;
-        unsigned im:8;
-        unsigned ds:9;
+        unsigned ie_ku:6;
+        unsigned:26;
+    };
+    struct {
+        unsigned iec:1; // Current interrupt enable
+        unsigned kuc:1; // Current kernel/user mode switch (0 = kernel mode, 1 = user mode)
+        unsigned iep:1; // Previous interrupt enable
+        unsigned kup:1; // Previous kernel/user mode switch
+        unsigned ieo:1; // Old interrupt enable
+        unsigned kuo:1; // Old kernel/user mode switch
+        unsigned:2;
+        unsigned im:8;  // Interrupt mask
+        unsigned isc:1; // Isolate cache
+        unsigned swc:1; // Swap cache
+        unsigned pz:1;  // Write cache parity as 0?
+        unsigned cm:1;
+        unsigned pe:1;
+        unsigned ts:1;
+        unsigned bev:1;
+        unsigned:2;
         unsigned re:1;
-        unsigned fr:1;
-        unsigned rp:1;
+        unsigned:2;
         unsigned cu0:1;
         unsigned cu1:1;
         unsigned cu2:1;
         unsigned cu3:1;
-    } PACKED;
-    struct {
-        unsigned:16;
-        unsigned de:1;
-        unsigned ce:1;
-        unsigned ch:1;
-        unsigned:1;
-        unsigned sr:1;
-        unsigned ts:1;
-        unsigned bev:1;
-        unsigned:1;
-        unsigned its:1;
-        unsigned:7;
     } PACKED;
 } PACKED cp0_status_t;
 
@@ -411,8 +319,8 @@ typedef struct cp0 {
 
      */
     bool kernel_mode;
-    bool supervisor_mode;
     bool user_mode;
+    bool isolate_cache;
 } cp0_t;
 
 
@@ -462,11 +370,10 @@ INLINE void cpu_set_pc(u32 new_pc) {
 }
 
 INLINE void cp0_status_updated() {
-    bool exception = PS1CPU.cp0.status.exl || PS1CPU.cp0.status.erl;
+    PS1CP0.user_mode     = PS1CP0.status.kuc == 1;
+    PS1CP0.kernel_mode   = PS1CP0.status.kuc == 0;
+    PS1CP0.isolate_cache = PS1CP0.status.isc == 1;
 
-    PS1CPU.cp0.kernel_mode     =  exception || PS1CPU.cp0.status.ksu == CPU_MODE_KERNEL;
-    PS1CPU.cp0.supervisor_mode = !exception && PS1CPU.cp0.status.ksu == CPU_MODE_SUPERVISOR;
-    PS1CPU.cp0.user_mode       = !exception && PS1CPU.cp0.status.ksu == CPU_MODE_USER;
 }
 
 #endif //PS1_CPU_H

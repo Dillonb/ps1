@@ -5,7 +5,7 @@
 
 u8 ps1_read8(u32 address);
 u16 ps1_read16(u32 address);
-u32 ps1_read32(u32 address);
+u32 ps1_read32(u32 virt);
 
 void ps1_write8(u32 address, u8 value);
 void ps1_write16(u32 address, u16 value);

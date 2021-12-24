@@ -26,8 +26,16 @@ void load_bios(const char* bios_path) {
 }
 
 void ps1_system_init() {
+    memset(&PS1SYS, 0x00, sizeof(PS1SYS));
     load_bios("SCPH1001.BIN");
     cpu_set_pc(0xBFC00000);
+
+    PS1SYS.dpcr = 0x07654321;
+
+//#ifdef PSX_FORCE_TTY /* Patch BIOS to enable TTY output */
+    ((uint32_t *)PS1SYS.mem.bios)[0x1bc3] = 0x24010001; /* ADDIU $at, $zero, 0x1 */
+    ((uint32_t *)PS1SYS.mem.bios)[0x1bc5] = 0xaf81a9c0; /* SW $at, -0x5640($gp) */
+//#endif
 }
 
 _Noreturn void ps1_system_loop() {

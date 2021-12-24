@@ -44,18 +44,9 @@ MIPS_INSTR(mips_beq) {
     conditional_branch(instruction.i.immediate, get_register(instruction.i.rs) == get_register(instruction.i.rt));
 }
 
-MIPS_INSTR(mips_beql) {
-    conditional_branch_likely(instruction.i.immediate, get_register(instruction.i.rs) == get_register(instruction.i.rt));
-}
-
 MIPS_INSTR(mips_bgtz) {
     s32 reg = get_register(instruction.i.rs);
     conditional_branch(instruction.i.immediate,  reg > 0);
-}
-
-MIPS_INSTR(mips_bgtzl) {
-    s32 reg = get_register(instruction.i.rs);
-    conditional_branch_likely(instruction.i.immediate,  reg > 0);
 }
 
 MIPS_INSTR(mips_blez) {
@@ -63,22 +54,9 @@ MIPS_INSTR(mips_blez) {
     conditional_branch(instruction.i.immediate, reg <= 0);
 }
 
-MIPS_INSTR(mips_blezl) {
-    s32 reg = get_register(instruction.i.rs);
-    conditional_branch_likely(instruction.i.immediate, reg <= 0);
-}
-
 MIPS_INSTR(mips_bne) {
     conditional_branch(instruction.i.immediate, get_register(instruction.i.rs) != get_register(instruction.i.rt));
 }
-
-MIPS_INSTR(mips_bnel) {
-    u32 rs = get_register(instruction.i.rs);
-    u32 rt = get_register(instruction.i.rt);
-    logtrace("Branch if: 0x%08lX != 0x%08lX", rs, rt);
-    conditional_branch_likely(instruction.i.immediate, rs != rt);
-}
-
 
 MIPS_INSTR(mips_cache) {
     return; // No need to emulate the cache. Might be fun to do someday for accuracy.
@@ -516,19 +494,9 @@ MIPS_INSTR(mips_ri_bltz) {
     conditional_branch(instruction.i.immediate, reg < 0);
 }
 
-MIPS_INSTR(mips_ri_bltzl) {
-    s32 reg = get_register(instruction.i.rs);
-    conditional_branch_likely(instruction.i.immediate, reg < 0);
-}
-
 MIPS_INSTR(mips_ri_bgez) {
     s32 reg = get_register(instruction.i.rs);
     conditional_branch(instruction.i.immediate, reg >= 0);
-}
-
-MIPS_INSTR(mips_ri_bgezl) {
-    s32 reg = get_register(instruction.i.rs);
-    conditional_branch_likely(instruction.i.immediate, reg >= 0);
 }
 
 MIPS_INSTR(mips_ri_bltzal) {
@@ -543,14 +511,6 @@ MIPS_INSTR(mips_ri_bgezal) {
     conditional_branch(instruction.i.immediate, reg >= 0);
 }
 
-MIPS_INSTR(mips_eret) {
-    if (PS1CPU.cp0.status.erl) {
-        cpu_set_pc(PS1CPU.cp0.error_epc);
-        PS1CPU.cp0.status.erl = false;
-    } else {
-        cpu_set_pc(PS1CPU.cp0.EPC);
-        PS1CPU.cp0.status.exl = false;
-    }
-    cp0_status_updated();
-    PS1CPU.llbit = false;
+MIPS_INSTR(mips_rfe) {
+    PS1CP0.status.ie_ku >>= 2;
 }

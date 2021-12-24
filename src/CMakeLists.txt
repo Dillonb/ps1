@@ -11,7 +11,9 @@ add_library(core
         mem/ps1system.c mem/ps1system.h
         cpu/cpu.c cpu/cpu.h cpu/cpu_register_access.h
         cpu/mips_instructions.c cpu/mips_instructions.h
-        cpu/mips_instruction_decode.h mem/mem_util.h)
+        cpu/mips_instruction_decode.h
+        mem/mem_util.h
+        mem/dma.c mem/dma.h)
 
 TARGET_LINK_LIBRARIES(core disassemble)
 if (NOT WIN32)

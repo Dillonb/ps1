@@ -42,20 +42,18 @@ const char* register_names[] = {
 };
 
 const char* cp0_register_names[] = {
-        "Index", "Random", "EntryLo0", "EntryLo1", "Context", "PageMask", "Wired", "7", "BadVAddr", "Count", "EntryHi",
-        "Compare", "Status", "Cause", "EPC", "PRId", "Config", "LLAddr", "WatchLo", "WatchHi", "XContext", "21", "22",
-        "23", "24", "25", "Parity Error", "Cache Error", "TagLo", "TagHi", "error_epc", "r31"
+        "0", "1", "2", "BPC", "4", "BDA", "JUMPDEST", "DCIC", "BadVAddr", "BDAM", "10",
+        "BPCM", "SR", "CAUSE", "EPC", "PRId", "16", "17", "18", "19", "20", "21", "22",
+        "23", "24", "25", "26", "27", "28", "29", "30", "31"
 };
 
 r3000a_t ps1cpu;
 
 void cpu_handle_exception(u32 pc, u32 code, s32 coprocessor_error) {
-    bool old_exl = PS1CP0.status.exl;
     loginfo("Exception thrown! Code: %d Coprocessor: %d", code, coprocessor_error);
     // In a branch delay slot, set EPC to the branch PRECEDING the slot.
     // This is so the exception handler can re-execute the branch on return.
     if (PS1CPU.branch) {
-        unimplemented(PS1CPU.cp0.status.exl, "handling branch delay when exl == true");
         PS1CPU.cp0.cause.branch_delay = true;
         PS1CPU.branch = false;
         pc -= 4;
@@ -63,10 +61,9 @@ void cpu_handle_exception(u32 pc, u32 code, s32 coprocessor_error) {
         PS1CPU.cp0.cause.branch_delay = false;
     }
 
-    if (!PS1CPU.cp0.status.exl) {
-        PS1CPU.cp0.EPC = pc;
-        PS1CPU.cp0.status.exl = true;
-    }
+    PS1CPU.cp0.EPC = pc;
+
+    PS1CP0.status.ie_ku <<= 2;
 
     PS1CPU.cp0.cause.exception_code = code;
     if (coprocessor_error > 0) {
@@ -89,7 +86,7 @@ void cpu_handle_exception(u32 pc, u32 code, s32 coprocessor_error) {
             case EXCEPTION_TRAP:
             case EXCEPTION_BREAKPOINT:
             case EXCEPTION_SYSCALL:
-                cpu_set_pc(0x80000180);
+                cpu_set_pc(0x80000080);
                 break;
             default:
                 logfatal("Unknown exception %d without BEV! See page 181 in the manual.", code);
@@ -115,10 +112,10 @@ INLINE mipsinstr_handler_t r3000a_cp0_decode(u32 pc, mips_instruction_t instr) {
         }
     } else {
         switch (instr.fr.funct) {
-            case COP_FUNCT_ERET:
-                return mips_eret;
             case COP_FUNCT_WAIT:
                 return mips_nop;
+            case COP_FUNCT_RFE:
+                return mips_rfe;
             default: {
                 char buf[50];
                 disassemble(pc, instr.raw, buf, 50);
@@ -174,9 +171,7 @@ INLINE mipsinstr_handler_t r3000a_special_decode(u32 pc, mips_instruction_t inst
 INLINE mipsinstr_handler_t r3000a_regimm_decode(u32 pc, mips_instruction_t instr) {
     switch (instr.i.rt) {
         case RT_BLTZ:   return mips_ri_bltz;
-        case RT_BLTZL:  return mips_ri_bltzl;
         case RT_BGEZ:   return mips_ri_bgez;
-        case RT_BGEZL:  return mips_ri_bgezl;
         case RT_BLTZAL: return mips_ri_bltzal;
         case RT_BGEZAL: return mips_ri_bgezal;
         default: {
@@ -215,13 +210,9 @@ mipsinstr_handler_t r3000a_instruction_decode(u32 pc, mips_instruction_t instr) 
         case OPC_LW:     return mips_lw;
         case OPC_LWU:    return mips_lwu;
         case OPC_BEQ:    return mips_beq;
-        case OPC_BEQL:   return mips_beql;
         case OPC_BGTZ:   return mips_bgtz;
-        case OPC_BGTZL:  return mips_bgtzl;
         case OPC_BLEZ:   return mips_blez;
-        case OPC_BLEZL:  return mips_blezl;
         case OPC_BNE:    return mips_bne;
-        case OPC_BNEL:   return mips_bnel;
         case OPC_CACHE:  return mips_cache;
         case OPC_SB:     return mips_sb;
         case OPC_SH:     return mips_sh;
@@ -279,7 +270,7 @@ void cpu_step() {
     instruction.raw = ps1_read32(pc);
 
     if (unlikely(PS1CPU.interrupts > 0)) {
-        if(PS1CPU.cp0.status.ie && !PS1CPU.cp0.status.exl && !PS1CPU.cp0.status.erl) {
+        if(PS1CPU.cp0.status.iec) {
             cpu_handle_exception(pc, EXCEPTION_INTERRUPT, -1);
             return;
         }
