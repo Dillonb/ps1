@@ -12,6 +12,7 @@ add_library(core
         cpu/cpu.c cpu/cpu.h cpu/cpu_register_access.h
         cpu/mips_instructions.c cpu/mips_instructions.h
         cpu/mips_instruction_decode.h
+        gpu/gpu.c gpu/gpu.h
         mem/mem_util.h
         mem/dma.c mem/dma.h)
 

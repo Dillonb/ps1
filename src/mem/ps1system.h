@@ -3,6 +3,8 @@
 
 #include <util.h>
 #include <stdlib.h>
+#include <gpu/gpu.h>
+#include <mem/dma.h>
 
 void ps1_system_init();
 void ps1_create_crash_dump();
@@ -21,11 +23,13 @@ typedef struct ps1_system {
 
     u16 i_mask;
     u16 i_stat;
-    u32 dpcr;
-    u32 dicr;
+    ps1_gpu_t gpu;
+    dma_state_t dma;
 } ps1_system_t;
 
 extern struct ps1_system ps1_system;
 #define PS1SYS ps1_system
+
+#define PS1GPU ps1_system.gpu
 
 #endif //PS1_PS1SYSTEM_H

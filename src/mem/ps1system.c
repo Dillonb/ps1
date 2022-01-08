@@ -30,7 +30,7 @@ void ps1_system_init() {
     load_bios("SCPH1001.BIN");
     cpu_set_pc(0xBFC00000);
 
-    PS1SYS.dpcr = 0x07654321;
+    PS1SYS.dma.dpcr = 0x07654321;
 
 //#ifdef PSX_FORCE_TTY /* Patch BIOS to enable TTY output */
     ((uint32_t *)PS1SYS.mem.bios)[0x1bc3] = 0x24010001; /* ADDIU $at, $zero, 0x1 */

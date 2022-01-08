@@ -5,6 +5,7 @@
 #include <mem/mem_util.h>
 #include <mem/dma.h>
 #include <cpu/cpu.h>
+#include <gpu/gpu.h>
 
 #define CHECK_ISC do { if (PS1CP0.isolate_cache) { return; } } while(0)
 
@@ -90,8 +91,7 @@ u32 ps1_read32(u32 virt) {
         case GPU_GPUREAD:
             return 0x00000000;
         case GPU_GPUSTAT:
-            return 0x1C000000;
-            //logfatal("%08X", PS1CPU.pc);
+            return gpu_gpustat();
         case REGION_TIMERS:
             return 0x00000000;
         default:
@@ -200,10 +200,10 @@ void ps1_write32(u32 virt, u32 value) {
         // CDROM Registers
         // GPU Registers
         case GPU_GP0:
-            logwarn("GP0 command sent, ignoring");
+            gpu_gp0_write(value);
             break;
         case GPU_GP1:
-            logwarn("GP0 command sent, ignoring");
+            gpu_gp1_write(value);
             break;
         // MDEC Registers
         // SPU Voice 0...23 registers

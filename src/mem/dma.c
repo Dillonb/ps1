@@ -4,13 +4,29 @@
 #include <mem/addresses.h>
 #include <mem/ps1system.h>
 
+void write_dma_channel_ctrl(int channel, u32 value) {
+    PS1SYS.dma.dma_channel_ctrl[channel].raw = value;
+    dma_channel_ctrl_t ctrl = PS1SYS.dma.dma_channel_ctrl[channel];
+
+
+
+    logwarn("DMA%d_CHANNEL_CTRL.direction: %d", channel, ctrl.direction);
+    logwarn("DMA%d_CHANNEL_CTRL.reverse: %d", channel, ctrl.reverse);
+    logwarn("DMA%d_CHANNEL_CTRL.chopping: %d", channel, ctrl.chopping);
+    logwarn("DMA%d_CHANNEL_CTRL.syncmode: %d", channel, ctrl.syncmode);
+    logwarn("DMA%d_CHANNEL_CTRL.chopping_dma_window_size: %d", channel, ctrl.chopping_dma_window_size);
+    logwarn("DMA%d_CHANNEL_CTRL.chopping_cpu_window_size: %d", channel, ctrl.chopping_cpu_window_size);
+    logwarn("DMA%d_CHANNEL_CTRL.start_busy: %d", channel, ctrl.start_busy);
+    logwarn("DMA%d_CHANNEL_CTRL.start_trigger: %d", channel, ctrl.start_trigger);
+}
+
 void dma_register_write(u32 address, u32 value) {
     switch (address) {
         case DMA_DPCR:
-            PS1SYS.dpcr = value;
+            PS1SYS.dma.dpcr = value;
             break;
         case DMA_DICR:
-            PS1SYS.dicr = value;
+            PS1SYS.dma.dicr = value;
             break;
         case DMA0_BASE_ADDR:
             logfatal("DMA0_BASE_ADDR = %08X", value);
@@ -25,14 +41,12 @@ void dma_register_write(u32 address, u32 value) {
         case DMA1_CHANNEL_CTRL:
             logfatal("DMA1_CHANNEL_CTRL = %08X", value);
         case DMA2_BASE_ADDR:
-            logwarn("DMA2_BASE_ADDR = %08X", value);
-            break;
+            logfatal("DMA2_BASE_ADDR = %08X", value);
         case DMA2_BLOCK_CTRL:
-            logwarn("DMA2_BLOCK_CTRL = %08X", value);
-            break;
+            logfatal("DMA2_BLOCK_CTRL = %08X", value);
         case DMA2_CHANNEL_CTRL:
-            logwarn("DMA2_CHANNEL_CTRL = %08X", value);
-            break;
+            write_dma_channel_ctrl(2, value);
+            logfatal("DMA2_CHANNEL_CTRL = %08X", value);
         case DMA3_BASE_ADDR:
             logfatal("DMA3_BASE_ADDR = %08X", value);
         case DMA3_BLOCK_CTRL:
@@ -52,14 +66,11 @@ void dma_register_write(u32 address, u32 value) {
         case DMA5_CHANNEL_CTRL:
             logfatal("DMA5_CHANNEL_CTRL = %08X", value);
         case DMA6_BASE_ADDR:
-            logwarn("DMA6_BASE_ADDR = %08X", value);
-            break;
+            logfatal("DMA6_BASE_ADDR = %08X", value);
         case DMA6_BLOCK_CTRL:
-            logwarn("DMA6_BLOCK_CTRL = %08X", value);
-            break;
+            logfatal("DMA6_BLOCK_CTRL = %08X", value);
         case DMA6_CHANNEL_CTRL:
-            logwarn("DMA6_CHANNEL_CTRL = %08X", value);
-            break;
+            logfatal("DMA6_CHANNEL_CTRL = %08X", value);
         default:
             logfatal("Unknown DMA register write: [%08X]=%08X", address, value);
     }
@@ -68,9 +79,9 @@ void dma_register_write(u32 address, u32 value) {
 u32 dma_register_read(u32 address) {
     switch (address) {
         case DMA_DPCR:
-            return PS1SYS.dpcr;
+            return PS1SYS.dma.dpcr;
         case DMA_DICR:
-            return PS1SYS.dicr;
+            return PS1SYS.dma.dicr;
         case DMA0_BASE_ADDR:
             logfatal("read DMA0_BASE_ADDR");
         case DMA0_BLOCK_CTRL:
@@ -88,8 +99,7 @@ u32 dma_register_read(u32 address) {
         case DMA2_BLOCK_CTRL:
             logfatal("read DMA2_BLOCK_CTRL");
         case DMA2_CHANNEL_CTRL:
-            logwarn("read DMA2_CHANNEL_CTRL");
-            return 0x00000000;
+            logfatal("read DMA2_CHANNEL_CTRL");
         case DMA3_BASE_ADDR:
             logfatal("read DMA3_BASE_ADDR");
         case DMA3_BLOCK_CTRL:
@@ -113,8 +123,7 @@ u32 dma_register_read(u32 address) {
         case DMA6_BLOCK_CTRL:
             logfatal("read DMA6_BLOCK_CTRL");
         case DMA6_CHANNEL_CTRL:
-            logwarn("read DMA6_CHANNEL_CTRL");
-            return 0x00000000;
+            logfatal("read DMA6_CHANNEL_CTRL");
         default:
             logfatal("Unknown DMA register read: [%08X]", address);
     }
