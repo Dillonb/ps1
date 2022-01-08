@@ -38,6 +38,10 @@ void ps1_system_init() {
 //#endif
 }
 
+void ps1_create_crash_dump() {
+    printf("TODO: implement crash dump functionality\n");
+}
+
 _Noreturn void ps1_system_loop() {
     while (1) {
         cpu_step();

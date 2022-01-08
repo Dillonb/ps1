@@ -31,20 +31,17 @@ extern unsigned int next_ps1_log_verbosity;
 #endif
 #define LOG_ENABLED
 
-
+void log_set_fatal_handler(void (*handler)());
+void log_call_fatal_handler();
 #define log_set_verbosity(new_verbosity) do {ps1_log_verbosity = new_verbosity; next_ps1_log_verbosity = new_verbosity;} while(0)
 #define delayed_log_set_verbosity(new_verbosity) do {next_ps1_log_verbosity = new_verbosity;} while(0)
 #define update_delayed_log_verbosity() do {ps1_log_verbosity = next_ps1_log_verbosity;} while(0)
 #define log_get_verbosity() ps1_log_verbosity
 
 #define logfatal(message,...) do { \
-    fprintf(stderr, COLOR_RED "[FATAL] at %s:%d ", __FILE__, __LINE__);\
-    fprintf(stderr, message "\n" COLOR_END, ##__VA_ARGS__);\
-    exit(EXIT_FAILURE);} while(0)
-
-#define logdie(message,...) do { \
-    fprintf(stderr, COLOR_RED "[FATAL] ");\
-    fprintf(stderr, message "\n" COLOR_END, ##__VA_ARGS__);\
+    log_call_fatal_handler();                                           \
+    fprintf(stderr, COLOR_RED "[FATAL] at %s:%d ", __FILE__, __LINE__); \
+    fprintf(stderr, message "\n" COLOR_END, ##__VA_ARGS__);             \
     exit(EXIT_FAILURE);} while(0)
 
 #define logwarn(message,...) do { if (ps1_log_verbosity >= LOG_VERBOSITY_WARN) {printf(COLOR_YELLOW "[WARN]  " message "\n" COLOR_END, ##__VA_ARGS__);} } while(0)

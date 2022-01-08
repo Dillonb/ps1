@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 void ps1_system_init();
+void ps1_create_crash_dump();
 
 _Noreturn void ps1_system_loop();
 

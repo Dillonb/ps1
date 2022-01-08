@@ -13,6 +13,7 @@ void usage(cflags_t* flags) {
 int main(int argc, char** argv) {
     cflags_t* flags = cflags_init();
     cflags_flag_t * verbose = cflags_add_bool(flags, 'v', "verbose", NULL, "enables verbose output, repeat up to 4 times for more verbosity");
+    cflags_flag_t * dump_on_fatal = cflags_add_bool(flags, 'd', "dump-on-fatal", NULL, "create crash dump on fatal error");
 
     bool help = false;
     cflags_add_bool(flags, 'h', "help", &help, "Display this help message");
@@ -24,6 +25,9 @@ int main(int argc, char** argv) {
         return 0;
     }
     log_set_verbosity(verbose->count);
+    if (*dump_on_fatal->bool_value) {
+        log_set_fatal_handler(ps1_create_crash_dump);
+    }
 
     ps1_system_init();
     ps1_system_loop();
