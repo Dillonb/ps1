@@ -10,7 +10,7 @@ typedef union dma_channel_ctrl {
         unsigned:6;
         unsigned chopping:1; // 1 = run CPU during DMA gaps
         unsigned syncmode:2;
-        unsigned:2;
+        unsigned:5;
         unsigned chopping_dma_window_size:3;
         unsigned:1;
         unsigned chopping_cpu_window_size:3;
@@ -25,11 +25,25 @@ typedef union dma_channel_ctrl {
 } dma_channel_ctrl_t;
 ASSERT32(dma_channel_ctrl_t);
 
+typedef struct dma_block_ctrl {
+    u32 raw;
+    struct {
+        unsigned bc:16;
+        unsigned:16;
+    };
+    struct {
+        unsigned bs:16;
+        unsigned ba:16;
+    };
+} dma_block_ctrl_t;
+
 typedef struct dma_state {
     u32 dpcr;
     u32 dicr;
 
     dma_channel_ctrl_t dma_channel_ctrl[7];
+    dma_block_ctrl_t block_ctrl[7];
+    u32 base_addr[7];
 } dma_state_t;
 
 void dma_register_write(u32 address, u32 value);

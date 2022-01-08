@@ -8,16 +8,17 @@ void write_dma_channel_ctrl(int channel, u32 value) {
     PS1SYS.dma.dma_channel_ctrl[channel].raw = value;
     dma_channel_ctrl_t ctrl = PS1SYS.dma.dma_channel_ctrl[channel];
 
-
-
-    logwarn("DMA%d_CHANNEL_CTRL.direction: %d", channel, ctrl.direction);
-    logwarn("DMA%d_CHANNEL_CTRL.reverse: %d", channel, ctrl.reverse);
+    logwarn("DMA%d_CHANNEL_CTRL.direction: %d (%s)", channel, ctrl.direction, ctrl.direction == 0 ? "to main ram" : "from main ram");
+    logwarn("DMA%d_CHANNEL_CTRL.reverse: %d (%s)", channel, ctrl.reverse, ctrl.reverse == 0 ? "add 4 between each transfer" : "subtract 4 between each transfer");
     logwarn("DMA%d_CHANNEL_CTRL.chopping: %d", channel, ctrl.chopping);
     logwarn("DMA%d_CHANNEL_CTRL.syncmode: %d", channel, ctrl.syncmode);
     logwarn("DMA%d_CHANNEL_CTRL.chopping_dma_window_size: %d", channel, ctrl.chopping_dma_window_size);
     logwarn("DMA%d_CHANNEL_CTRL.chopping_cpu_window_size: %d", channel, ctrl.chopping_cpu_window_size);
     logwarn("DMA%d_CHANNEL_CTRL.start_busy: %d", channel, ctrl.start_busy);
     logwarn("DMA%d_CHANNEL_CTRL.start_trigger: %d", channel, ctrl.start_trigger);
+
+    unimplemented(ctrl.start_busy != 0, "DMA%d_CHANNEL_CTRL: start_busy = %d", channel, ctrl.start_busy);
+    unimplemented(ctrl.start_trigger != 0, "DMA%d_CHANNEL_CTRL: start_trigger = %d", channel, ctrl.start_trigger);
 }
 
 void dma_register_write(u32 address, u32 value) {
@@ -45,8 +46,9 @@ void dma_register_write(u32 address, u32 value) {
         case DMA2_BLOCK_CTRL:
             logfatal("DMA2_BLOCK_CTRL = %08X", value);
         case DMA2_CHANNEL_CTRL:
+            logwarn("DMA2_CHANNEL_CTRL = %08X", value);
             write_dma_channel_ctrl(2, value);
-            logfatal("DMA2_CHANNEL_CTRL = %08X", value);
+            break;
         case DMA3_BASE_ADDR:
             logfatal("DMA3_BASE_ADDR = %08X", value);
         case DMA3_BLOCK_CTRL:
@@ -66,11 +68,17 @@ void dma_register_write(u32 address, u32 value) {
         case DMA5_CHANNEL_CTRL:
             logfatal("DMA5_CHANNEL_CTRL = %08X", value);
         case DMA6_BASE_ADDR:
-            logfatal("DMA6_BASE_ADDR = %08X", value);
+            logwarn("DMA6_BASE_ADDR = %08X", value);
+            PS1SYS.dma.base_addr[6] = value;
+            break;
         case DMA6_BLOCK_CTRL:
-            logfatal("DMA6_BLOCK_CTRL = %08X", value);
+            logwarn("DMA6_BLOCK_CTRL = %08X", value);
+            PS1SYS.dma.block_ctrl[6].raw = value;
+            break;
         case DMA6_CHANNEL_CTRL:
-            logfatal("DMA6_CHANNEL_CTRL = %08X", value);
+            logwarn("DMA6_CHANNEL_CTRL = %08X", value);
+            write_dma_channel_ctrl(6, value);
+            break;
         default:
             logfatal("Unknown DMA register write: [%08X]=%08X", address, value);
     }
@@ -123,7 +131,9 @@ u32 dma_register_read(u32 address) {
         case DMA6_BLOCK_CTRL:
             logfatal("read DMA6_BLOCK_CTRL");
         case DMA6_CHANNEL_CTRL:
-            logfatal("read DMA6_CHANNEL_CTRL");
+            ps1_create_crash_dump();
+            logwarn("read DMA6_CHANNEL_CTRL %08X", PS1SYS.dma.dma_channel_ctrl[6].raw);
+            return PS1SYS.dma.dma_channel_ctrl[6].raw;
         default:
             logfatal("Unknown DMA register read: [%08X]", address);
     }
