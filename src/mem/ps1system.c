@@ -39,7 +39,13 @@ void ps1_system_init() {
 }
 
 void ps1_create_crash_dump() {
-    printf("TODO: implement crash dump functionality\n");
+    log_set_verbosity(LOG_VERBOSITY_DEBUG);
+    logdebug("======== CRASH DUMP ========");
+    logdebug("PC: 0x%08X", PS1CPU.pc);
+    for (int i = 0; i < 32; i++) {
+        logdebug("r%-2d $%-4s: 0x%08X", i, register_names[i], PS1CPU.gpr[i]);
+    }
+    printf("TODO: dump ram to disk\n");
 }
 
 _Noreturn void ps1_system_loop() {

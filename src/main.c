@@ -30,6 +30,8 @@ int main(int argc, char** argv) {
         log_set_fatal_handler(ps1_create_crash_dump);
     }
 
+    cflags_free(flags);
+
     ps1_system_init();
     ps1_system_loop();
 }
