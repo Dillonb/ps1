@@ -2,3 +2,4 @@
 *.BIN
 build
 cmake-build*
+.cache
